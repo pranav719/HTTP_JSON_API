@@ -14,7 +14,6 @@ import (
 )
 
 func receive(w http.ResponseWriter, r *http.Request) {
-	//timestamp := time.Now()
 
 	if strings.Contains(r.URL.Path, "/users") {
 
@@ -27,17 +26,12 @@ func receive(w http.ResponseWriter, r *http.Request) {
 				break
 			}
 			fmt.Printf("data for id %d send\n", id)
-			/*for k, v := range r.URL.Query() {
-			fmt.Printf("%s: %s\n", k, v)
-			}*/
+
 			w.Header().Set("Content-Type", "application/json; charset=utf-8")
 			json.NewEncoder(w).Encode(d)
 		case "POST":
 			var d User
-			/*reqBody, err := ioutil.ReadAll(r.Body)
-			if err != nil {
-			log.Fatal(err)
-			}*/
+
 			if err := json.NewDecoder(r.Body).Decode(&d); err != nil {
 				http.Error(w, err.Error(), http.StatusInternalServerError)
 				return
@@ -48,7 +42,6 @@ func receive(w http.ResponseWriter, r *http.Request) {
 				return
 			}
 			fmt.Printf("\n", d)
-			//data := "Hello Bhai sab badiya"
 			w.Header().Set("Content-Type", "application/json; charset=utf-8")
 			json.NewEncoder(w).Encode(str)
 		default:
@@ -60,22 +53,17 @@ func receive(w http.ResponseWriter, r *http.Request) {
 
 		switch r.Method {
 		case "GET":
-			/*id := strings.SplitN(r.URL.Path, "/", 3)[2]
-			d , err:= getUserData(id)
-			if err!= nil{
-			http.Error(w, "Some Error Occureeeed", 5000)
-			break
-			}*/
+
 			var userid string
 			var currentTime time.Time
 			for k, v := range r.URL.Query() {
 				fmt.Println("\nyaha tak 2")
-				//fmt.Printf("%s: %s\n", k, v)
+				//ct := time.Now()
 				if k == "user" {
 					userid = v[0]
 				} else if k == "infection_timestamp" {
-					fmt.Println("%T", v[0])
-					currentTime, _ = time.Parse("2020-10-20", v[0])
+					fmt.Printf("%T\n", v[0])
+					currentTime, _ = time.Parse("2014-11-12T11:45:26.371Z", v[0])
 				} else {
 					http.Error(w, "Incorrect Naming Convention ", http.StatusInternalServerError)
 					return
@@ -86,7 +74,7 @@ func receive(w http.ResponseWriter, r *http.Request) {
 			//contactTime, _ := time.Parse("2020-10-2", ct)
 			victims, err := getContactData(userid, currentTime)
 			if err != nil {
-				http.Error(w, "yaha tak 6", http.StatusInternalServerError)
+				http.Error(w, err.Error(), http.StatusInternalServerError)
 				return
 			}
 
@@ -96,10 +84,7 @@ func receive(w http.ResponseWriter, r *http.Request) {
 
 		case "POST":
 			var d Contact
-			/*reqBody, err := ioutil.ReadAll(r.Body)
-			if err != nil {
-				log.Fatal(err)
-			}*/
+
 			if err := json.NewDecoder(r.Body).Decode(&d); err != nil {
 				http.Error(w, "error1", http.StatusInternalServerError)
 				return
@@ -121,25 +106,6 @@ func receive(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "Nahi Mila", 404)
 		return
 	}
-
-	/*reqBody, err := ioutil.ReadAll(r.Body)
-	if err != nil {
-		log.Fatal(err)
-	}
-
-	//w.Write([]byte("Received a POST request\n"))
-
-	/*err := json.Unmarshal(jsonStr, &data)
-	    if err != nil {
-	        fmt.Println(err)
-		}*/
-
-	// validation
-	// if error in input return unsuccessful
-
-	// put data into database
-
-	//retrun successful
 
 }
 
@@ -221,34 +187,34 @@ func getContactData(userid string, cTime time.Time) ([]string, error) {
 	}
 	collection := client.Database("test").Collection("test2")
 
-	cTime2 := cTime.Add(-14 * 24 * time.Hour)
-
-	filter := bson.D{{"$and", []bson.D{
-		bson.D{{"contacttimestamp", bson.D{{"$and",
-			[]bson.D{
-				bson.D{{"$gt", cTime2}},
-				bson.D{{"$lt", cTime}},
-			}}},
-		}},
-		bson.D{{"$or", []bson.D{
+	//cTime2 := cTime.Add(-14 * 24 * time.Hour)
+	kTime := time.Now().Add(-14 * 24 * time.Hour)
+	fmt.Println(kTime)
+	kTime2 := time.Now()
+	//filter := bson.D{{"$and", []bson.D{
+	/*filter := bson.D{{"contacttimestamp", bson.D{{"$and",
+		[]bson.D{
+			bson.D{{"$gt", kTime}},
+			bson.D{{"$lt", kTime2}},
+		}}},
+	}}*/
+	/*bson.D{{"$or", []bson.D{
 			bson.D{{"user1id", userid}},
 			bson.D{{"user2id", userid}},
 		}}},
 	},
-	}}
+	}}*/
+	filter := bson.D{{"$and", []bson.D{bson.D{{"contacttimestamp", bson.D{{"$gt", kTime}, {"$lt", kTime2}}}},
+		bson.D{{"$or", []bson.D{bson.D{{"user1id", userid}}, bson.D{{"user2id", userid}}}}}}}}
 
-	// Passing bson.D{{}} as the filter matches all documents in the collection
 	cur, err := collection.Find(context.TODO(), filter)
 	if err != nil {
 		return results, err
 	}
 	fmt.Println("\nyaha tak 5")
 
-	// Finding multiple documents returns a cursor
-	// Iterating through the cursor allows us to decode documents one at a time
 	for cur.Next(context.TODO()) {
 
-		// create a value into which the single document can be decoded
 		var elem Contact
 		err = cur.Decode(&elem)
 		if err != nil {
