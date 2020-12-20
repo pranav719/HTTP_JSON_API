@@ -1,10 +1,9 @@
 package main
 
 import (
-	"bytes"
 	"encoding/json"
 	"fmt"
-	"io/ioutil"
+	"log"
 	"net/http"
 	"time"
 )
@@ -20,9 +19,8 @@ type User struct {
 
 func main() {
 
-	id := 4
+	id := "4"
 	url := "http://localhost:8080/users/" + id
-
 
 	//var jsonStr = []byte(`{"title":"Buy cheese and bread for breakfast."}`)
 	req, err := http.NewRequest("GET", url, nil)
@@ -44,6 +42,6 @@ func main() {
 
 	fmt.Println("response Status:", resp.Status)
 	fmt.Println("response Headers:", resp.Header)
-	fmt.Println("The data for the user with id %d is :",id)
-	fmt.Pringln(d)
+	fmt.Println("The data for the user with id %d is :", id)
+	fmt.Println(d)
 }

@@ -217,19 +217,22 @@ func getContactData(userid string, cTime time.Time) ([]string, error) {
 	}
 	collection := client.Database("test").Collection("test2")
 
-	filter1 := bson.D{{"contacttimestamp", bson.D{{"$and",
-		[]bson.D{
-			bson.D{{"$gt", cTime.Add(-14 * 24 * time.Hour)}},
-			bson.D{{"$lt", cTime}},
+	filter := bson.D{{"$and", []bson.D{
+		bson.D{{"contacttimestamp", bson.D{{"$and",
+			[]bson.D{
+				bson.D{{"$gt", cTime.Add(-14 * 24 * time.Hour)}},
+				bson.D{{"$lt", cTime}},
+			}}},
+		}},
+		bson.D{{"$or", []bson.D{
+			bson.D{{"user1id", userid}},
+			bson.D{{"user2id", userid}},
 		}}},
+	},
 	}}
-	filter2 := bson.M{
-		"user1id": userid,
-		"user2id": userid,
-	}
 
 	// Passing bson.D{{}} as the filter matches all documents in the collection
-	cur, err := collection.Find(context.TODO(), filter1, filter2)
+	cur, err := collection.Find(context.TODO(), filter)
 	if err != nil {
 		return results, err
 	}
