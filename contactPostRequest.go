@@ -9,30 +9,26 @@ import (
 	"time"
 )
 
-type User struct {
-	ID                string    `json:"id"`
-	Name              string    `json:"name"`
-	Dob               string    `json:"dob"`
-	PhoneNo           int       `json:"phoneno"`
-	Email             string    `json:"email"`
-	CreationTimestamp time.Time `json:"creationtimestamp"`
+type Contact struct {
+	User1ID          string    `json:"user1id"`
+	User2ID          string    `json:"user2id"`
+	ContactTimestamp time.Time `json:"contacttimestamp"`
 }
 
 func main() {
-	url := "http://localhost:8080/users"
+	url := "http://localhost:8080/contacts"
 
-	user := User{
-		ID:                "3",
-		Name:              "somebody",
-		Dob:               "1998-03-01",
-		PhoneNo:           9946398722,
-		Email:             "user3@gmail.com",
-		CreationTimestamp: time.Now(),
+	ct := time.Now().Add(-13 * 24 * time.Hour)
+	fmt.Println(ct)
+	contact := Contact{
+		User1ID:          "1",
+		User2ID:          "4",
+		ContactTimestamp: ct,
 	}
-	fmt.Println("data send : \n", user)
+	fmt.Println("data send : \n", contact)
 
 	payloadBuf := new(bytes.Buffer)
-	json.NewEncoder(payloadBuf).Encode(user)
+	json.NewEncoder(payloadBuf).Encode(contact)
 
 	//var jsonStr = []byte(`{"title":"Buy cheese and bread for breakfast."}`)
 	req, err := http.NewRequest("POST", url, payloadBuf)

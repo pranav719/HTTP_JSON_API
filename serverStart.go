@@ -23,7 +23,7 @@ func receive(w http.ResponseWriter, r *http.Request) {
 			id := strings.SplitN(r.URL.Path, "/", 3)[2]
 			d, err := getUserData(id)
 			if err != nil {
-				http.Error(w, "Some Error Occureeeed", 5000)
+				http.Error(w, err.Error(), http.StatusInternalServerError)
 				break
 			}
 			fmt.Printf("data for id %d send\n", id)
@@ -39,12 +39,12 @@ func receive(w http.ResponseWriter, r *http.Request) {
 			log.Fatal(err)
 			}*/
 			if err := json.NewDecoder(r.Body).Decode(&d); err != nil {
-				http.Error(w, "Some Error Occureeeed", 5000)
+				http.Error(w, err.Error(), http.StatusInternalServerError)
 				return
 			}
 			str, err := insertUserData(d)
 			if err != nil {
-				http.Error(w, "some error in insertion", 5000)
+				http.Error(w, err.Error(), http.StatusInternalServerError)
 				return
 			}
 			fmt.Printf("\n", d)
@@ -55,7 +55,8 @@ func receive(w http.ResponseWriter, r *http.Request) {
 			w.WriteHeader(http.StatusNotImplemented)
 			w.Write([]byte(http.StatusText(http.StatusNotImplemented)))
 		}
-	} else if strings.Contains(r.URL.Path, "/contact") {
+	} else if strings.Contains(r.URL.Path, "/contacts") {
+		fmt.Println("\nyaha tak 1")
 
 		switch r.Method {
 		case "GET":
@@ -66,23 +67,26 @@ func receive(w http.ResponseWriter, r *http.Request) {
 			break
 			}*/
 			var userid string
-			var contactTime time.Time
+			var currentTime time.Time
 			for k, v := range r.URL.Query() {
+				fmt.Println("\nyaha tak 2")
 				//fmt.Printf("%s: %s\n", k, v)
-				if k == "userid" {
+				if k == "user" {
 					userid = v[0]
-				} else if k == "contacttimestamp" {
-					contactTime, _ = time.Parse("2020-10-2", v[0])
+				} else if k == "infection_timestamp" {
+					fmt.Println("%T", v[0])
+					currentTime, _ = time.Parse("2020-10-20", v[0])
 				} else {
-					http.Error(w, "incorrect variable naming", 0)
+					http.Error(w, "Incorrect Naming Convention ", http.StatusInternalServerError)
 					return
 				}
 			}
-
+			fmt.Println("\nyaha tak 3 %s", userid)
+			fmt.Println(currentTime)
 			//contactTime, _ := time.Parse("2020-10-2", ct)
-			victims, err := getContactData(userid, contactTime)
+			victims, err := getContactData(userid, currentTime)
 			if err != nil {
-				http.Error(w, "Error in retreving data", 0)
+				http.Error(w, "yaha tak 6", http.StatusInternalServerError)
 				return
 			}
 
@@ -97,12 +101,12 @@ func receive(w http.ResponseWriter, r *http.Request) {
 				log.Fatal(err)
 			}*/
 			if err := json.NewDecoder(r.Body).Decode(&d); err != nil {
-				http.Error(w, "Some Error Occureeeed", 5000)
+				http.Error(w, "error1", http.StatusInternalServerError)
 				return
 			}
 			str, err := insertContactData(d)
 			if err != nil {
-				http.Error(w, "Some Error Occureeeed", 5000)
+				http.Error(w, "error2", http.StatusInternalServerError)
 				return
 			}
 			fmt.Printf("Data received and added in database\n", d)
@@ -114,7 +118,7 @@ func receive(w http.ResponseWriter, r *http.Request) {
 			w.Write([]byte(http.StatusText(http.StatusNotImplemented)))
 		}
 	} else {
-		http.NotFound(w, r)
+		http.Error(w, "Nahi Mila", 404)
 		return
 	}
 
@@ -205,7 +209,7 @@ func insertContactData(contactData Contact) (interface{}, error) {
 func getContactData(userid string, cTime time.Time) ([]string, error) {
 
 	var results []string
-
+	fmt.Println("\nyaha tak 4", cTime)
 	clientOptions := options.Client().ApplyURI("mongodb://localhost:27017")
 	client, err := mongo.Connect(context.TODO(), clientOptions)
 	if err != nil {
@@ -217,10 +221,12 @@ func getContactData(userid string, cTime time.Time) ([]string, error) {
 	}
 	collection := client.Database("test").Collection("test2")
 
+	cTime2 := cTime.Add(-14 * 24 * time.Hour)
+
 	filter := bson.D{{"$and", []bson.D{
 		bson.D{{"contacttimestamp", bson.D{{"$and",
 			[]bson.D{
-				bson.D{{"$gt", cTime.Add(-14 * 24 * time.Hour)}},
+				bson.D{{"$gt", cTime2}},
 				bson.D{{"$lt", cTime}},
 			}}},
 		}},
@@ -236,6 +242,7 @@ func getContactData(userid string, cTime time.Time) ([]string, error) {
 	if err != nil {
 		return results, err
 	}
+	fmt.Println("\nyaha tak 5")
 
 	// Finding multiple documents returns a cursor
 	// Iterating through the cursor allows us to decode documents one at a time
@@ -264,8 +271,7 @@ func test() {
 }
 
 func main() {
-	http.HandleFunc("/users", receive)
-	http.HandleFunc("/users/", receive)
+	http.HandleFunc("/", receive)
 	test()
 	http.ListenAndServe(":8080", nil)
 
